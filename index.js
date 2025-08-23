@@ -7,7 +7,7 @@ app.use(express.json());
  
 // Dummy routes
 app.get("/", (req, res) => {
-  res.send("Hello from Dummy Express API 🚀");
+  res.send("Hello from Dummy Express API");
 });
  
 app.get("/api/test", (req, res) => {
