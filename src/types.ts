@@ -1,4 +1,4 @@
-export type RegisterReq = {
+export interface RegisterReq {
     firstName: string;
     lastName: string;
     contactNumber: string;
@@ -6,6 +6,11 @@ export type RegisterReq = {
     password: string;
     profilePicUrl: string;
 };
+
+export interface LoginReq {
+    identifier: string;
+    password: string;
+}
 
 export type GetUserQuery = {
     id: number;
