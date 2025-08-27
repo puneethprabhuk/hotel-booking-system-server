@@ -44,7 +44,7 @@ export class User {
       const user = result.rows[0];
 
       // 4. Insert into userroles (default: 'user')
-      const roleRes = await client.query(`SELECT id FROM roles WHERE name = $1`, ["user"]);
+      const roleRes = await client.query(`SELECT id FROM roles WHERE rolename = $1`, ["user"]);
       if (roleRes.rowCount === 0) {
         throw new Error("Default role 'user' not found in roles table");
       }
@@ -66,8 +66,42 @@ export class User {
 
       return sendSuccess({ user, token }, "Signup success", 201);
     } catch (error) {
+      await client.query("ROLLBACK");
       console.error("Register error:", error);
       return sendError("Server error during registration", 500);
+    } finally {
+      client.release();
+    }
+  }
+
+  static async getAllUsers() {
+    try {
+      const query = `
+        SELECT 
+          u.id AS user_id,
+          u.firstname AS first_name,
+          u.lastname AS last_name,
+          u.email AS email,
+          u.contactnumber AS contact_number,
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'role_id', r.id,
+              'role_name', r.rolename
+            )
+          ) AS roles
+        FROM users u
+        LEFT JOIN userroles ur ON ur.userid = u.id
+        LEFT JOIN roles r ON r.id = ur.roleid
+        GROUP BY u.id, u.firstname, u.lastname, u.email, u.contactnumber
+        ORDER BY u.id
+      `;
+
+      const result = await pool.query(query);
+      const responseData = result.rows;
+      return sendSuccess( responseData, "User Record", 200);
+    } catch (error) {
+      console.error("Error while fetching user record:", error);
+      return sendError("Server error fetching user record", 500);
     }
   }
 }

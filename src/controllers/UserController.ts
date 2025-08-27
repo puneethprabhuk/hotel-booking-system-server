@@ -3,6 +3,7 @@ import { User } from "../models/User";
 
 export class UserController {
   constructor(public router: Router) {
+    this.router.get("/user/alluser", this.getAllUser);
     this.router.post("/user/register", this.register);
   }
 
@@ -14,6 +15,16 @@ export class UserController {
     }
 
     res.setHeader("Authorization", `Bearer ${response.data?.token}`);
+    return res.status(response.statusCode).json(response);
+  }
+
+  async getAllUser(req: Request, res: Response) {
+    const response = await User.getAllUsers();
+
+    if (!response.success) {
+      return res.status(response.statusCode).json(response);
+    }
+
     return res.status(response.statusCode).json(response);
   }
 }

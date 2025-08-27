@@ -1,10 +1,10 @@
 import express, { Application, Request, Response } from 'express';
-import dotenv from "dotenv";
+require('dotenv').config()
 import cors from "cors";
 import { createTables } from './database/schema';
 import routes from "./routes";
 
-dotenv.config();
+// dotenv.config();
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
 
