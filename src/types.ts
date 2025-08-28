@@ -4,12 +4,16 @@ export interface RegisterReq {
     contactNumber: string;
     email: string;
     password: string;
-    profilePicUrl: string;
 };
 
 export interface LoginReq {
     identifier: string;
     password: string;
+}
+
+export interface ProfilePicUpdateReq {
+    id: string;
+    profilePicUrl: string;
 }
 
 export type GetUserQuery = {

@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import pool from "../database/db";
 import { config } from "../utils/config";
 import { sendSuccess, sendError } from "../utils/response";
-import { LoginReq, RegisterReq } from "../types";
+import { LoginReq, ProfilePicUpdateReq, RegisterReq } from "../types";
 
 export class User {
   static async register(userData: RegisterReq) {
@@ -26,9 +26,9 @@ export class User {
 
       // 3. Insert user
       const query = `
-        INSERT INTO users (firstname, lastname, contactnumber, email, password, profilepicurl)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING id, firstname, lastname, email, contactnumber, profilepicurl
+        INSERT INTO users (firstname, lastname, contactnumber, email, password)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, firstname, lastname, email, contactnumber
       `;
 
       const values = [
@@ -37,7 +37,6 @@ export class User {
         userData.contactNumber,
         userData.email,
         hashedPassword,
-        userData.profilePicUrl
       ];
 
       const result = await pool.query(query, values);
@@ -128,6 +127,29 @@ export class User {
       );
     } catch (error) {
       console.error("Login error:", error);
+      return sendError("Internal Server Error", 500);
+    }
+  }
+
+  static async updateProfilePic(userData: ProfilePicUpdateReq) {
+    try {
+      const query = `
+        UPDATE users
+        SET profilepicurl = $1
+        WHERE id = $2
+        RETURNING id`;
+
+      const updateResult = await pool.query(query, [
+        userData.profilePicUrl,
+        userData.id
+      ]);
+
+      if (updateResult.rowCount === 0) {
+        return sendError("User not found", 404);
+      }
+      return sendSuccess(updateResult.rows[0], "Profile picture updated successfully", 200);
+    } catch (error) {
+      console.log("Error updating profile pic", error);
       return sendError("Internal Server Error", 500);
     }
   }
