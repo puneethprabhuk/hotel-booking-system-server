@@ -40,7 +40,13 @@ export class User {
       ];
 
       const result = await pool.query(query, values);
-      const user = result.rows[0];
+      const user = {
+        id: result.rows[0].id,
+        firstName: result.rows[0].firstname,
+        lastName: result.rows[0].lastname,
+        email: result.rows[0].email,
+        contactNumber: result.rows[0].contactnumber
+      };
 
       // 4. Insert into userroles (default: 'user')
       const roleRes = await client.query(`SELECT id FROM roles WHERE rolename = $1`, ['user']);
@@ -63,7 +69,7 @@ export class User {
         { expiresIn: "1d" }
       );
 
-      user.roles = [{ role_id: roleId, role_name: "user" }];
+      user['roles'] = [{ id: roleId, name: "user" }];
       return sendSuccess({ user, token }, "Signup success", 201);
     } catch (error) {
       await client.query('ROLLBACK');
@@ -182,6 +188,71 @@ export class User {
     } catch (error) {
       console.error("Error while fetching user record:", error);
       return sendError("Server error fetching user record", 500);
+    }
+  }
+
+  static async updateUser(loggedInUser, userData) {
+    try {
+      const { id } = loggedInUser; // userId coming from route param
+      const { firstName, lastName, email, contactNumber, profilePicUrl } = userData;
+
+      // Collect fields to update
+      const fields: string[] = [];
+      const values: any[] = [];
+      let idx = 1;
+
+      if (firstName) {
+        fields.push(`firstname = $${idx++}`);
+        values.push(firstName);
+      }
+      if (lastName) {
+        fields.push(`lastname = $${idx++}`);
+        values.push(lastName);
+      }
+      if (email) {
+        fields.push(`email = $${idx++}`);
+        values.push(email);
+      }
+      if (contactNumber) {
+        fields.push(`contactnumber = $${idx++}`);
+        values.push(contactNumber);
+      }
+      if (profilePicUrl) {
+        fields.push(`profilepicurl = $${idx++}`);
+        values.push(profilePicUrl);
+      }
+
+      if (fields.length === 0) {
+        return sendError("No fields provided for update", 400);
+      }
+
+      // Add userId to params
+      values.push(id);
+
+      const query = `UPDATE users SET ${fields.join(", ")} WHERE id = $${idx} RETURNING id, firstname, lastname, email, contactnumber, profilepicurl`;
+
+      const result = await pool.query(query, values);
+
+      if (result.rowCount === 0) {
+        return sendError("User not found", 404);
+      }
+
+      const user = result.rows[0];
+      return sendSuccess(
+        {
+          id: user.id,
+          firstName: user.firstname,
+          lastName: user.lastname,
+          email: user.email,
+          contactNumber: user.contactnumber,
+          profilePicUrl: user.profilepicurl
+        },
+        "User updated successfully",
+        200
+      );
+    } catch (error) {
+      console.error("Error updating user:", error);
+      return sendError("Internal server error", 500);
     }
   }
 }
